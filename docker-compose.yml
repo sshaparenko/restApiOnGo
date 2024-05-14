@@ -1,0 +1,10 @@
+version: '3.9'
+services:
+  postgres:
+    image: bitnami/postgresql:15
+    environment:
+      POSTGRESQL_DATABASE: ${POSTGRES_DATABASE}
+      POSTGRESQL_USERNAME: ${POSTGRES_USERNAME}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'
