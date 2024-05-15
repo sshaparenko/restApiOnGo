@@ -3,26 +3,29 @@ package database
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/sshaparenko/restApiOnGo/internal/models"
 	"github.com/sshaparenko/restApiOnGo/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
 
 func InitDatasource(dbName string, dbPort string, dbUser string, dbPassword string) {
 
-	var databaseHost string = utils.GetValue("DB_HOST")
+	var databaseHost string = os.Getenv("POSTGRES_HOST")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", databaseHost, dbUser, dbPassword, dbName, dbPort)
 	
 	var err error
 
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 
 	if err != nil {
 		panic(err.Error())

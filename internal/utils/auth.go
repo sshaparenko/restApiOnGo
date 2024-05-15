@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -80,15 +81,15 @@ func verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 //jwtKeyFunc return the JWT secret key
 //used to varify the token
 func jwtKeyFunc(token *jwt.Token) (interface{}, error) {
-	return []byte(GetValue("JWT_SECRET_KEY")), nil
+	return []byte(os.Getenv("JWT_SECRET_KEY")), nil
 }
 
 func GenerateNewAccessToken() (string, error) {
 	// get JWT secret from .env
-	secret := GetValue("JWT_SECRET_KEY")
+	secret := os.Getenv("JWT_SECRET_KEY")
 
 	// get JWT token expire time from .env
-	minutesCount, _ := strconv.Atoi(GetValue("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT"))
+	minutesCount, _ := strconv.Atoi(os.Getenv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT"))
 	//create JWT claims object
 	claims := jwt.MapClaims{}
 	//add exp claim to claims

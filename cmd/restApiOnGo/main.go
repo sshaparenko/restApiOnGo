@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sshaparenko/restApiOnGo/internal/database"
 	"github.com/sshaparenko/restApiOnGo/internal/routes"
-	"github.com/sshaparenko/restApiOnGo/internal/utils"
 )
 
 const DEFAULT_PORT = "8080"
@@ -25,10 +24,10 @@ func main() {
 	var app *fiber.App = NewFiberApp()
 
 	database.InitDatasource(
-		utils.GetValue("DB_NAME"),
-		utils.GetValue("DB_PORT"),
-		utils.GetValue("DB_USER"),
-		utils.GetValue("DB_PASSWORD"),
+		os.Getenv("POSTGRES_DATABASE"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_USERNAME"),
+		os.Getenv("POSTGRES_PASSWORD"),
 	)
 
 	var PORT string = os.Getenv("PORT")

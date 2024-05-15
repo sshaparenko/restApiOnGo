@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,10 +18,10 @@ func newApp() *fiber.App {
 	var app *fiber.App = NewFiberApp()
 
 	database.InitDatasource(
-		utils.GetValue("DB_TEST_NAME"),
-		utils.GetValue("DB_TEST_PORT"),
-		utils.GetValue("DB_TEST_USER"),
-		utils.GetValue("DB_TEST_PASSWORD"),
+		os.Getenv("POSTGRES_DATABASE"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_USERNAME"),
+		os.Getenv("POSTGRES_PASSWORD"),
 	)
 
 	return app
@@ -28,10 +29,10 @@ func newApp() *fiber.App {
 
 func getItem() models.Item {
 	database.InitDatasource(
-		utils.GetValue("DB_TEST_NAME"),
-		utils.GetValue("DB_TEST_PORT"),
-		utils.GetValue("DB_TEST_USER"),
-		utils.GetValue("DB_TEST_PASSWORD"),
+		os.Getenv("POSTGRES_DATABASE"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_USERNAME"),
+		os.Getenv("POSTGRES_PASSWORD"),
 	)
 
 	item, err := database.SeedItem()
@@ -72,10 +73,10 @@ func FiberToHandleFunc(app *fiber.App) http.HandlerFunc {
 func getJWTToken(t *testing.T) string {
 	// connect to the test database
 	database.InitDatasource(
-		utils.GetValue("DB_TEST_NAME"),
-		utils.GetValue("DB_TEST_PORT"),
-		utils.GetValue("DB_TEST_USER"),
-		utils.GetValue("DB_TEST_PASSWORD"),
+		os.Getenv("POSTGRES_DATABASE"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_USERNAME"),
+		os.Getenv("POSTGRES_PASSWORD"),
 	)
 
 	// insert a sample data for user into the database
@@ -150,10 +151,10 @@ func TestSignup_ValidationFailed(t *testing.T) {
 
 func TestLogin_Success(t *testing.T) {
 	database.InitDatasource(
-		utils.GetValue("DB_TEST_NAME"),
-		utils.GetValue("DB_TEST_PORT"),
-		utils.GetValue("DB_TEST_USER"),
-		utils.GetValue("DB_TEST_PASSWORD"),
+		os.Getenv("POSTGRES_DATABASE"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_USERNAME"),
+		os.Getenv("POSTGRES_PASSWORD"),
 	)
 
 	user, err := database.SeedUser()
