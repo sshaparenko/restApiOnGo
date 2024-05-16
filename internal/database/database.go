@@ -20,7 +20,7 @@ func InitDatasource(dbName string, dbPort string, dbUser string, dbPassword stri
 	var databaseHost string = os.Getenv("POSTGRES_HOST")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", databaseHost, dbUser, dbPassword, dbName, dbPort)
-	
+
 	var err error
 
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -61,10 +61,10 @@ func SeedUser() (models.User, error) {
 	}
 
 	var inputUser models.User = models.User{
-		ID: user.ID,
-		Email: user.Email,
+		ID:       user.ID,
+		Email:    user.Email,
 		Password: string(password),
-	}	
+	}
 
 	DB.Create(&inputUser)
 	fmt.Println("user seeded to database")

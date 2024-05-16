@@ -9,17 +9,17 @@ import (
 	"github.com/sshaparenko/restApiOnGo/internal/utils"
 )
 
-func GetAllItems(c * fiber.Ctx) error {
+func GetAllItems(c *fiber.Ctx) error {
 	var items []models.Item = services.GetAllItems()
 
 	return c.JSON(models.Response[[]models.Item]{
 		Success: true,
 		Message: "All items data",
-		Data: items,
+		Data:    items,
 	})
 }
 
-func GetItemByID(c * fiber.Ctx) error {
+func GetItemByID(c *fiber.Ctx) error {
 	var itemID string = c.Params("id")
 
 	item, err := services.GetItemById(itemID)
@@ -33,11 +33,11 @@ func GetItemByID(c * fiber.Ctx) error {
 	return c.JSON(models.Response[models.Item]{
 		Success: true,
 		Message: "item found",
-		Data: item,
+		Data:    item,
 	})
 }
 
-func CreateItem(c * fiber.Ctx) error {
+func CreateItem(c *fiber.Ctx) error {
 	isValid, err := utils.CheckToken(c)
 
 	if !isValid {
@@ -64,7 +64,7 @@ func CreateItem(c * fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(models.Response[[]*models.ErrorResponse]{
 			Success: false,
 			Message: "validation failed",
-			Data: errors,
+			Data:    errors,
 		})
 	}
 	//create a new item from validated request
@@ -73,11 +73,11 @@ func CreateItem(c * fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(models.Response[models.Item]{
 		Success: true,
 		Message: "item created",
-		Data: createItem,
+		Data:    createItem,
 	})
 }
 
-func UpdateItem(c * fiber.Ctx) error {
+func UpdateItem(c *fiber.Ctx) error {
 	isValid, err := utils.CheckToken(c)
 
 	if !isValid {
@@ -102,7 +102,7 @@ func UpdateItem(c * fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(models.Response[[]*models.ErrorResponse]{
 			Success: false,
 			Message: "valdation failed",
-			Data: errors,
+			Data:    errors,
 		})
 	}
 
@@ -120,7 +120,7 @@ func UpdateItem(c * fiber.Ctx) error {
 	return c.JSON(models.Response[models.Item]{
 		Success: true,
 		Message: "item updated",
-		Data: updatedItem,
+		Data:    updatedItem,
 	})
 }
 

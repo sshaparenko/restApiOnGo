@@ -18,8 +18,8 @@ func Signup(userInput models.UserRequest) (string, error) {
 	}
 
 	var user models.User = models.User{
-		ID: uuid.New().String(),
-		Email: userInput.Email,
+		ID:       uuid.New().String(),
+		Email:    userInput.Email,
 		Password: string(password),
 	}
 
@@ -39,14 +39,14 @@ func Signup(userInput models.UserRequest) (string, error) {
 }
 
 func Login(userInput models.UserRequest) (string, error) {
-	//create a var called user 
+	//create a var called user
 	var user models.User
 	//find user based on email
 	result := database.DB.First(&user, "email = ?", userInput.Email)
 	//if user is not found => reurn error
 	if result.RowsAffected == 0 {
 		return "", errors.New("user not found")
-	} 
+	}
 	//compare password with the password from database
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userInput.Password))
 	//if password not match => return error

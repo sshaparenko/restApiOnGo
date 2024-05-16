@@ -9,7 +9,7 @@ import (
 )
 
 func Signup(c *fiber.Ctx) error {
-	//create a var to store the request 
+	//create a var to store the request
 	var userInput *models.UserRequest = new(models.UserRequest)
 
 	// parse the request into "userInput" variable
@@ -26,11 +26,11 @@ func Signup(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(models.Response[[]*models.ErrorResponse]{
 			Success: false,
 			Message: "validation failed",
-			Data: errors,
+			Data:    errors,
 		})
 	}
 	// perform the signup
-  // if signup is successful, the JWT token is returned
+	// if signup is successful, the JWT token is returned
 	token, err := services.Signup(*userInput)
 	// if signup is failed, return an error
 	if err != nil {
@@ -43,14 +43,14 @@ func Signup(c *fiber.Ctx) error {
 	return c.JSON(models.Response[string]{
 		Success: true,
 		Message: "token data",
-		Data: token,
+		Data:    token,
 	})
 }
 
 func Login(c *fiber.Ctx) error {
 	// create a variable to store the request
 	var userInput *models.UserRequest = new(models.UserRequest)
-	 // parse the request into "userInput" variable
+	// parse the request into "userInput" variable
 	if err := c.BodyParser(userInput); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(models.Response[any]{
 			Success: false,
@@ -64,7 +64,7 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(models.Response[[]*models.ErrorResponse]{
 			Success: false,
 			Message: "validation failed",
-			Data: errors,
+			Data:    errors,
 		})
 	}
 	// perform the login
@@ -81,6 +81,6 @@ func Login(c *fiber.Ctx) error {
 	return c.JSON(models.Response[string]{
 		Success: true,
 		Message: "token data",
-		Data: token,
+		Data:    token,
 	})
 }

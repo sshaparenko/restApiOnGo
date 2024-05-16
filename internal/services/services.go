@@ -29,16 +29,16 @@ func GetItemById(id string) (models.Item, error) {
 	}
 	// return the item data from the database
 	return item, nil
-} 
+}
 
 func CreateItem(itemRequest models.ItemRequest) models.Item {
 	// create a new item
 	// this item will be inserted to the database
 	var newItem models.Item = models.Item{
-		ID: uuid.New().String(),
-		Name: itemRequest.Name,
-		Price: itemRequest.Price,
-		Quantity: itemRequest.Quantity,
+		ID:        uuid.New().String(),
+		Name:      itemRequest.Name,
+		Price:     itemRequest.Price,
+		Quantity:  itemRequest.Quantity,
 		CreatedAt: time.Now(),
 	}
 	// insert the new item data into the database
@@ -48,7 +48,7 @@ func CreateItem(itemRequest models.ItemRequest) models.Item {
 	return newItem
 }
 
-func UpdateItem(itemRequest models.ItemRequest, id string) (models.Item, error){
+func UpdateItem(itemRequest models.ItemRequest, id string) (models.Item, error) {
 	item, err := GetItemById(id)
 
 	if err != nil {

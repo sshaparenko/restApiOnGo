@@ -3,7 +3,7 @@ package models
 import "github.com/go-playground/validator/v10"
 
 func getErrorMessage(err validator.FieldError) string {
-	switch err.Tag(){
+	switch err.Tag() {
 	case "required":
 		return err.Field() + " is required"
 	case "gt":

@@ -9,14 +9,15 @@ import (
 
 func CreateMiddleware() func(*fiber.Ctx) error {
 	config := jwtware.Config{
-		SigningKey: []byte(os.Getenv("JWT_SECRET_KEY")),
-		ContextKey: "jwt",
+		SigningKey:   []byte(os.Getenv("JWT_SECRET_KEY")),
+		ContextKey:   "jwt",
 		ErrorHandler: jwtError,
 	}
 
 	return jwtware.New(config)
 }
-//jwtError returns error handler for JWT middleware
+
+// jwtError returns error handler for JWT middleware
 func jwtError(c *fiber.Ctx, err error) error {
 	if err.Error() == "Missing or malformed JWT" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

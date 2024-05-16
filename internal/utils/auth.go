@@ -33,7 +33,8 @@ func ExtractTokenMetata(c *fiber.Ctx) (*TokenMetadata, error) {
 
 	return nil, err
 }
-//returns tocken check result
+
+// returns tocken check result
 func CheckToken(c *fiber.Ctx) (bool, error) {
 	//get current time
 	now := time.Now().Unix()
@@ -78,8 +79,8 @@ func verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 	return token, nil
 }
 
-//jwtKeyFunc return the JWT secret key
-//used to varify the token
+// jwtKeyFunc return the JWT secret key
+// used to varify the token
 func jwtKeyFunc(token *jwt.Token) (interface{}, error) {
 	return []byte(os.Getenv("JWT_SECRET_KEY")), nil
 }

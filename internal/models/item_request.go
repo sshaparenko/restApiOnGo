@@ -3,9 +3,9 @@ package models
 import "github.com/go-playground/validator/v10"
 
 type ItemRequest struct {
-	Name			string 		`json:"name" validate:"required"`
-	Price			int 			`json:"price" validate:"required,gt=0"`
-	Quantity 	int				`json:"quantity" validate:"gte=0"` 
+	Name     string `json:"name" validate:"required"`
+	Price    int    `json:"price" validate:"required,gt=0"`
+	Quantity int    `json:"quantity" validate:"gte=0"`
 }
 
 func (itemInput ItemRequest) ValidateStruct() []*ErrorResponse {

@@ -3,8 +3,8 @@ package models
 import "github.com/go-playground/validator/v10"
 
 type UserRequest struct {
-	Email				string	`json:"email" validate:"required,email"`
-	Password		string	`json:"password" validate:"required,min=6"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
 }
 
 func (userInput UserRequest) ValidateStruct() []*ErrorResponse {
