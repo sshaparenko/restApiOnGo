@@ -34,7 +34,7 @@ func ExtractTokenMetata(c *fiber.Ctx) (*TokenMetadata, error) {
 	return nil, err
 }
 
-// returns tocken check result
+// CheckToken returns tocken check result
 func CheckToken(c *fiber.Ctx) (bool, error) {
 	//get current time
 	now := time.Now().Unix()

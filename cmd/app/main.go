@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sshaparenko/restApiOnGo/internal/database"
-	"github.com/sshaparenko/restApiOnGo/internal/routes"
+	"github.com/sshaparenko/restApiOnGo/pkg/database"
+	"github.com/sshaparenko/restApiOnGo/pkg/routes"
 )
 
 const DEFAULT_PORT = "8080"
@@ -26,14 +27,12 @@ func main() {
 	database.InitDatasource(
 		os.Getenv("POSTGRES_DATABASE"),
 		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_USERNAME"),
-		os.Getenv("POSTGRES_PASSWORD"),
 	)
 
-	var PORT string = os.Getenv("PORT")
-	if PORT == "" {
-		PORT = DEFAULT_PORT
+	var port string = os.Getenv("PORT")
+	if port == "" {
+		port = DEFAULT_PORT
 	}
 
-	app.Listen(fmt.Sprintf(":%s", PORT))
+	log.Fatal(app.Listen(fmt.Sprintf(":%s", port)))
 }

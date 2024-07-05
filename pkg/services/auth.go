@@ -4,20 +4,20 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/sshaparenko/restApiOnGo/internal/database"
-	"github.com/sshaparenko/restApiOnGo/internal/models"
-	"github.com/sshaparenko/restApiOnGo/internal/utils"
+	"github.com/sshaparenko/restApiOnGo/pkg/database"
+	"github.com/sshaparenko/restApiOnGo/pkg/domain"
+	"github.com/sshaparenko/restApiOnGo/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Signup(userInput models.UserRequest) (string, error) {
+func Signup(userInput domain.UserRequest) (string, error) {
 	password, err := bcrypt.GenerateFromPassword([]byte(userInput.Password), bcrypt.DefaultCost)
 
 	if err != nil {
 		return "", err
 	}
 
-	var user models.User = models.User{
+	var user domain.User = domain.User{
 		ID:       uuid.New().String(),
 		Email:    userInput.Email,
 		Password: string(password),
@@ -38,9 +38,9 @@ func Signup(userInput models.UserRequest) (string, error) {
 	return token, nil
 }
 
-func Login(userInput models.UserRequest) (string, error) {
+func Login(userInput domain.UserRequest) (string, error) {
 	//create a var called user
-	var user models.User
+	var user domain.User
 	//find user based on email
 	result := database.DB.First(&user, "email = ?", userInput.Email)
 	//if user is not found => reurn error

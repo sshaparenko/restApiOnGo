@@ -1,4 +1,4 @@
-package models
+package domain
 
 type Response[T any] struct {
 	Success bool   `json:"success"`

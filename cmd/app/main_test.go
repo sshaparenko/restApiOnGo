@@ -2,38 +2,61 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sshaparenko/restApiOnGo/internal/database"
-	"github.com/sshaparenko/restApiOnGo/internal/models"
-	"github.com/sshaparenko/restApiOnGo/internal/utils"
+	"github.com/sshaparenko/restApiOnGo/pkg/database"
+	"github.com/sshaparenko/restApiOnGo/pkg/domain"
+	"github.com/sshaparenko/restApiOnGo/pkg/utils"
 	"github.com/steinfletcher/apitest"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func newApp() *fiber.App {
 	var app *fiber.App = NewFiberApp()
-
-	database.InitDatasource(
-		os.Getenv("POSTGRES_DATABASE"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_USERNAME"),
-		os.Getenv("POSTGRES_PASSWORD"),
-	)
-
+	initTestDatasource()
 	return app
 }
 
-func getItem() models.Item {
-	database.InitDatasource(
-		os.Getenv("POSTGRES_DATABASE"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_USERNAME"),
-		os.Getenv("POSTGRES_PASSWORD"),
-	)
+func initTestDatasource() {
+	var db_host string = os.Getenv("POSTGRES_TEST_HOST")
+	var db_pass string = os.Getenv("POSTGRES_TEST_PASSWORD")
+	var db_user string = os.Getenv("POSTGRES_TEST_USERNAME")
+	var db_name string = "pgtdb"
+	var db_port string = "5433"
+
+	fmt.Print("HOST " + db_host)
+	fmt.Print("PASS " + db_pass)
+	fmt.Print("USER " + db_user)
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", db_host, db_user, db_pass, db_name, db_port)
+
+	var err error
+
+	database.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Println("Connected to Database")
+
+	if err := database.DB.AutoMigrate(&domain.User{}, &domain.Item{}); err != nil {
+		msg := fmt.Sprintf("Migration error: %s", err.Error())
+		panic(msg)
+	}
+}
+
+func getItem() domain.Item {
+	initTestDatasource()
 
 	item, err := database.SeedItem()
 	if err != nil {
@@ -72,12 +95,7 @@ func FiberToHandleFunc(app *fiber.App) http.HandlerFunc {
 
 func getJWTToken(t *testing.T) string {
 	// connect to the test database
-	database.InitDatasource(
-		os.Getenv("POSTGRES_DATABASE"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_USERNAME"),
-		os.Getenv("POSTGRES_PASSWORD"),
-	)
+	initTestDatasource()
 
 	// insert a sample data for user into the database
 	// the inserted sample data is returned into the "user variable"
@@ -86,7 +104,7 @@ func getJWTToken(t *testing.T) string {
 		panic(err)
 	}
 	// create a request for login
-	var userRequest *models.UserRequest = &models.UserRequest{
+	var userRequest *domain.UserRequest = &domain.UserRequest{
 		Email:    user.Email,
 		Password: user.Password,
 	}
@@ -99,9 +117,12 @@ func getJWTToken(t *testing.T) string {
 		Status(http.StatusOK).End().Response
 	// create a variable called "response"
 	// to store the response body from the login request
-	var response *models.Response[string] = &models.Response[string]{}
+	var response *domain.Response[string] = &domain.Response[string]{}
 	// decode the response body into the "response" variable
-	json.NewDecoder(resp.Body).Decode(&response)
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		msg := fmt.Sprintf("Error has occured while decoding API response: %s", err.Error())
+		panic(msg)
+	}
 	// get the JWT token
 	var token string = response.Data
 	// create a bearer token
@@ -111,13 +132,13 @@ func getJWTToken(t *testing.T) string {
 }
 
 func TestSignup_Success(t *testing.T) {
-	userData, err := utils.CreateFaker[models.User]()
+	userData, err := utils.CreateFaker[domain.User]()
 
 	if err != nil {
 		panic(err)
 	}
 
-	var userRequest *models.UserRequest = &models.UserRequest{
+	var userRequest *domain.UserRequest = &domain.UserRequest{
 		Email:    userData.Email,
 		Password: userData.Password,
 	}
@@ -135,7 +156,7 @@ func TestSignup_Success(t *testing.T) {
 }
 
 func TestSignup_ValidationFailed(t *testing.T) {
-	var userRequest *models.UserRequest = &models.UserRequest{
+	var userRequest *domain.UserRequest = &domain.UserRequest{
 		Email:    "",
 		Password: "",
 	}
@@ -150,19 +171,14 @@ func TestSignup_ValidationFailed(t *testing.T) {
 }
 
 func TestLogin_Success(t *testing.T) {
-	database.InitDatasource(
-		os.Getenv("POSTGRES_DATABASE"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_USERNAME"),
-		os.Getenv("POSTGRES_PASSWORD"),
-	)
+	initTestDatasource()
 
 	user, err := database.SeedUser()
 	if err != nil {
 		panic(err)
 	}
 
-	var userRequest *models.UserRequest = &models.UserRequest{
+	var userRequest *domain.UserRequest = &domain.UserRequest{
 		Email:    user.Email,
 		Password: user.Password,
 	}
@@ -178,7 +194,7 @@ func TestLogin_Success(t *testing.T) {
 }
 
 func TestLogin_ValidationFailed(t *testing.T) {
-	var userRequest *models.UserRequest = &models.UserRequest{
+	var userRequest *domain.UserRequest = &domain.UserRequest{
 		Email:    "",
 		Password: "",
 	}
@@ -193,7 +209,7 @@ func TestLogin_ValidationFailed(t *testing.T) {
 }
 
 func TestLogin_Failed(t *testing.T) {
-	var userRequest *models.UserRequest = &models.UserRequest{
+	var userRequest *domain.UserRequest = &domain.UserRequest{
 		Email:    "notfound@gmail.com",
 		Password: "123123",
 	}
@@ -217,7 +233,7 @@ func TestGetItems_Success(t *testing.T) {
 }
 
 func TestGetItem_Success(t *testing.T) {
-	var item models.Item = getItem()
+	var item domain.Item = getItem()
 
 	apitest.New().
 		HandlerFunc(FiberToHandleFunc(newApp())).
@@ -238,14 +254,14 @@ func TestGetItem_NotFound(t *testing.T) {
 
 func TestCreateItem_Success(t *testing.T) {
 	// create a sample data for item
-	itemData, err := utils.CreateFaker[models.Item]()
+	itemData, err := utils.CreateFaker[domain.Item]()
 	if err != nil {
 		panic(err)
 	}
 	// create a request body to create a new item
 	// the request body is filled with the value
 	// from the sample data
-	var itemRequest *models.ItemRequest = &models.ItemRequest{
+	var itemRequest *domain.ItemRequest = &domain.ItemRequest{
 		Name:     itemData.Name,
 		Price:    itemData.Price,
 		Quantity: itemData.Quantity,
@@ -266,7 +282,7 @@ func TestCreateItem_Success(t *testing.T) {
 }
 
 func TestCreateItem_ValidationFailed(t *testing.T) {
-	var itemRequest *models.ItemRequest = &models.ItemRequest{
+	var itemRequest *domain.ItemRequest = &domain.ItemRequest{
 		Name:     "",
 		Price:    0,
 		Quantity: 0,
@@ -285,9 +301,9 @@ func TestCreateItem_ValidationFailed(t *testing.T) {
 }
 
 func TestUpdateItem_Success(t *testing.T) {
-	var item models.Item = getItem()
+	var item domain.Item = getItem()
 
-	var itemRequest *models.ItemRequest = &models.ItemRequest{
+	var itemRequest *domain.ItemRequest = &domain.ItemRequest{
 		Name:     item.Name,
 		Price:    item.Price,
 		Quantity: item.Quantity,
@@ -307,7 +323,7 @@ func TestUpdateItem_Success(t *testing.T) {
 }
 
 func TestUpdateItem_Failed(t *testing.T) {
-	var itemRequest *models.ItemRequest = &models.ItemRequest{
+	var itemRequest *domain.ItemRequest = &domain.ItemRequest{
 		Name:     "changed",
 		Price:    10,
 		Quantity: 10,
@@ -326,7 +342,7 @@ func TestUpdateItem_Failed(t *testing.T) {
 }
 
 func TestDeleteItem_Success(t *testing.T) {
-	var item models.Item = getItem()
+	var item domain.Item = getItem()
 
 	var token string = getJWTToken(t)
 
