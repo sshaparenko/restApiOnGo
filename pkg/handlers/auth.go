@@ -4,17 +4,17 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sshaparenko/restApiOnGo/internal/models"
-	"github.com/sshaparenko/restApiOnGo/internal/services"
+	"github.com/sshaparenko/restApiOnGo/pkg/domain"
+	"github.com/sshaparenko/restApiOnGo/pkg/services"
 )
 
 func Signup(c *fiber.Ctx) error {
-	//create a var to store the request 
-	var userInput *models.UserRequest = new(models.UserRequest)
+	//create a var to store the request
+	var userInput *domain.UserRequest = new(domain.UserRequest)
 
 	// parse the request into "userInput" variable
 	if err := c.BodyParser(userInput); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(models.Response[any]{
+		return c.Status(http.StatusBadRequest).JSON(domain.Response[any]{
 			Success: false,
 			Message: err.Error(),
 		})
@@ -23,36 +23,36 @@ func Signup(c *fiber.Ctx) error {
 	errors := userInput.ValidateStruct()
 	// if validation is failed, return the validation errors
 	if errors != nil {
-		return c.Status(http.StatusBadRequest).JSON(models.Response[[]*models.ErrorResponse]{
+		return c.Status(http.StatusBadRequest).JSON(domain.Response[[]*domain.ErrorResponse]{
 			Success: false,
 			Message: "validation failed",
-			Data: errors,
+			Data:    errors,
 		})
 	}
 	// perform the signup
-  // if signup is successful, the JWT token is returned
+	// if signup is successful, the JWT token is returned
 	token, err := services.Signup(*userInput)
 	// if signup is failed, return an error
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(models.Response[any]{
+		return c.Status(http.StatusInternalServerError).JSON(domain.Response[any]{
 			Success: false,
 			Message: err.Error(),
 		})
 	}
 	// return the JWT token
-	return c.JSON(models.Response[string]{
+	return c.JSON(domain.Response[string]{
 		Success: true,
 		Message: "token data",
-		Data: token,
+		Data:    token,
 	})
 }
 
 func Login(c *fiber.Ctx) error {
 	// create a variable to store the request
-	var userInput *models.UserRequest = new(models.UserRequest)
-	 // parse the request into "userInput" variable
+	var userInput *domain.UserRequest = new(domain.UserRequest)
+	// parse the request into "userInput" variable
 	if err := c.BodyParser(userInput); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(models.Response[any]{
+		return c.Status(http.StatusBadRequest).JSON(domain.Response[any]{
 			Success: false,
 			Message: err.Error(),
 		})
@@ -61,10 +61,10 @@ func Login(c *fiber.Ctx) error {
 	errors := userInput.ValidateStruct()
 	// if validation is failed, return the validation errors
 	if errors != nil {
-		return c.Status(http.StatusBadRequest).JSON(models.Response[[]*models.ErrorResponse]{
+		return c.Status(http.StatusBadRequest).JSON(domain.Response[[]*domain.ErrorResponse]{
 			Success: false,
 			Message: "validation failed",
-			Data: errors,
+			Data:    errors,
 		})
 	}
 	// perform the login
@@ -72,15 +72,15 @@ func Login(c *fiber.Ctx) error {
 	token, err := services.Login(*userInput)
 	// if login is failed, return an error
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(models.Response[any]{
+		return c.Status(http.StatusInternalServerError).JSON(domain.Response[any]{
 			Success: false,
 			Message: err.Error(),
 		})
 	}
 	// return the JWT token
-	return c.JSON(models.Response[string]{
+	return c.JSON(domain.Response[string]{
 		Success: true,
 		Message: "token data",
-		Data: token,
+		Data:    token,
 	})
 }

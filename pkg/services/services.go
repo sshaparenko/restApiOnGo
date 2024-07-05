@@ -5,40 +5,40 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sshaparenko/restApiOnGo/internal/database"
-	"github.com/sshaparenko/restApiOnGo/internal/models"
+	"github.com/sshaparenko/restApiOnGo/pkg/database"
+	"github.com/sshaparenko/restApiOnGo/pkg/domain"
 )
 
-func GetAllItems() []models.Item {
+func GetAllItems() []domain.Item {
 	//create a variable to store items data
-	var items []models.Item = []models.Item{}
+	var items []domain.Item = []domain.Item{}
 	//get all data from database order by created_at
 	database.DB.Order("created_at desc").Find(&items)
 	//return all items from database
 	return items
 }
 
-func GetItemById(id string) (models.Item, error) {
+func GetItemByID(id string) (domain.Item, error) {
 	// create a variable to store item data
-	var item models.Item
+	var item domain.Item
 	// get item data from the database by ID
 	result := database.DB.First(&item, "id = ?", id)
 	// if the item data is not found, return an error
 	if result.RowsAffected == 0 {
-		return models.Item{}, errors.New("item not found")
+		return domain.Item{}, errors.New("item not found")
 	}
 	// return the item data from the database
 	return item, nil
-} 
+}
 
-func CreateItem(itemRequest models.ItemRequest) models.Item {
+func CreateItem(itemRequest domain.ItemRequest) domain.Item {
 	// create a new item
 	// this item will be inserted to the database
-	var newItem models.Item = models.Item{
-		ID: uuid.New().String(),
-		Name: itemRequest.Name,
-		Price: itemRequest.Price,
-		Quantity: itemRequest.Quantity,
+	var newItem domain.Item = domain.Item{
+		ID:        uuid.New().String(),
+		Name:      itemRequest.Name,
+		Price:     itemRequest.Price,
+		Quantity:  itemRequest.Quantity,
 		CreatedAt: time.Now(),
 	}
 	// insert the new item data into the database
@@ -48,11 +48,11 @@ func CreateItem(itemRequest models.ItemRequest) models.Item {
 	return newItem
 }
 
-func UpdateItem(itemRequest models.ItemRequest, id string) (models.Item, error){
-	item, err := GetItemById(id)
+func UpdateItem(itemRequest domain.ItemRequest, id string) (domain.Item, error) {
+	item, err := GetItemByID(id)
 
 	if err != nil {
-		return models.Item{}, err
+		return domain.Item{}, err
 	}
 
 	item.Name = itemRequest.Name
@@ -66,7 +66,7 @@ func UpdateItem(itemRequest models.ItemRequest, id string) (models.Item, error){
 }
 
 func DeleteItem(id string) bool {
-	item, err := GetItemById(id)
+	item, err := GetItemByID(id)
 
 	if err != nil {
 		return false
