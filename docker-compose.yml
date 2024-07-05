@@ -1,0 +1,55 @@
+version: "3.9"
+services:
+  postgres:
+    image: bitnami/postgresql:15
+    environment:
+      POSTGRESQL_DATABASE: pgdb
+      POSTGRESQL_USERNAME_FILE: /run/secrets/pg_user
+      POSTGRESQL_PASSWORD_FILE: /run/secrets/pg_pass
+    secrets:
+      - pg_pass
+      - pg_user
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "myuser"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      restart_policy:
+        condition: on-failure
+  app:
+    image: sshaparenkos/restapiongo:latest
+    environment:
+      POSTGRES_HOST: 172.17.0.1
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME_FILE: /run/secrets/pg_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+      POSTGRES_DATABASE: pgdb
+      JWT_SECRET_KEY: /run/secrets/jwt_secret
+      JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT: 15
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    secrets:
+      - pg_pass
+      - pg_user
+    deploy:
+      restart_policy:
+        condition: on-failure
+      update_config:
+        delay: 10s
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+secrets:
+  pg_pass:
+    external: true
+  pg_user:
+    external: true
