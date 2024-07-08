@@ -34,7 +34,7 @@ func Signup(userInput domain.UserRequest) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sdfsf
+
 	return token, nil
 }
 
