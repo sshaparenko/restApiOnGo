@@ -84,8 +84,8 @@ multipass shell manager
 Now we should add our docker secrets `pg_pass` and `pg_user` that will be used for our database
 
 ```shell
-echo "username" | docker secret create pg_user
-echo "password" | docker secret create pg_pass
+echo "username" | docker secret create pg_user -
+echo "password" | docker secret create pg_pass -
 ```
 
 You can check this secrets by runing
