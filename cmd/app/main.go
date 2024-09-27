@@ -22,7 +22,7 @@ func NewFiberApp() *fiber.App {
 
 func main() {
 	var app *fiber.App = NewFiberApp()
-	app.Config()
+
 	err := database.InitDatasource(
 		os.Getenv("POSTGRES_DATABASE"),
 		os.Getenv("POSTGRES_PORT"),
