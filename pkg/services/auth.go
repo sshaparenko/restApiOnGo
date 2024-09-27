@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/sshaparenko/restApiOnGo/pkg/database"
@@ -14,7 +15,7 @@ func Signup(userInput domain.UserRequest) (string, error) {
 	password, err := bcrypt.GenerateFromPassword([]byte(userInput.Password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("generating password hash: %w", err)
 	}
 
 	var user domain.User = domain.User{
@@ -32,7 +33,7 @@ func Signup(userInput domain.UserRequest) (string, error) {
 	token, err := utils.GenerateNewAccessToken()
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("generating access token in services.Signup: %w", err)
 	}
 
 	return token, nil
@@ -57,7 +58,7 @@ func Login(userInput domain.UserRequest) (string, error) {
 	token, err := utils.GenerateNewAccessToken()
 	//return error if JWT failed to generate
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("generating access token in services.Login: %w", err)
 	}
 	//return JWT
 	return token, nil

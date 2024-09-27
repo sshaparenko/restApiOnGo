@@ -13,21 +13,23 @@ import (
 const DEFAULT_PORT = "8080"
 
 func NewFiberApp() *fiber.App {
-	//create new fiber app
-	var app *fiber.App = fiber.New()
-	//set up routes
+	var app *fiber.App = fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+	})
 	routes.SetupRoutes(app)
-
 	return app
 }
 
 func main() {
 	var app *fiber.App = NewFiberApp()
 
-	database.InitDatasource(
+	err := database.InitDatasource(
 		os.Getenv("POSTGRES_DATABASE"),
 		os.Getenv("POSTGRES_PORT"),
 	)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
 
 	var port string = os.Getenv("PORT")
 	if port == "" {
@@ -35,4 +37,5 @@ func main() {
 	}
 
 	log.Fatal(app.Listen(fmt.Sprintf(":%s", port)))
+
 }

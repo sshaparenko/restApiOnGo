@@ -10,7 +10,13 @@ import (
 )
 
 func GetAllItems(c *fiber.Ctx) error {
-	var items []domain.Item = services.GetAllItems()
+	items, err := services.GetAllItems()
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(domain.Response[any]{
+			Success: false,
+			Message: err.Error(),
+		})
+	}
 
 	return c.JSON(domain.Response[[]domain.Item]{
 		Success: true,
@@ -20,9 +26,11 @@ func GetAllItems(c *fiber.Ctx) error {
 }
 
 func GetItemByID(c *fiber.Ctx) error {
+
 	var itemID string = c.Params("id")
 
 	item, err := services.GetItemByID(itemID)
+
 	if err != nil {
 		return c.Status(http.StatusNotFound).JSON(domain.Response[any]{
 			Success: false,
@@ -67,13 +75,20 @@ func CreateItem(c *fiber.Ctx) error {
 			Data:    errors,
 		})
 	}
-	//create a new item from validated request
-	var createItem domain.Item = services.CreateItem(*itemInput)
+
+	item, err := services.CreateItem(*itemInput)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(domain.Response[domain.Item]{
+			Success: false,
+			Message: err.Error(),
+			Data:    domain.Item{},
+		})
+	}
 
 	return c.Status(http.StatusCreated).JSON(domain.Response[domain.Item]{
 		Success: true,
 		Message: "item created",
-		Data:    createItem,
+		Data:    item,
 	})
 }
 
@@ -136,7 +151,14 @@ func DeleteItem(c *fiber.Ctx) error {
 
 	var itemID string = c.Params("id")
 
-	var result = services.DeleteItem(itemID)
+	result, err := services.DeleteItem(itemID)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(domain.Response[domain.Item]{
+			Success: false,
+			Message: err.Error(),
+			Data:    domain.Item{},
+		})
+	}
 
 	if result {
 		return c.JSON(domain.Response[any]{

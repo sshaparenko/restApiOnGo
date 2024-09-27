@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -18,11 +20,10 @@ func ExtractTokenMetata(c *fiber.Ctx) (*TokenMetadata, error) {
 	token, err := verifyToken(c)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("verifying token in utils.ExtractTokenMetata: %w", err)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-
 	if ok && token.Valid {
 		expires := int64(claims["exp"].(float64))
 
@@ -31,26 +32,23 @@ func ExtractTokenMetata(c *fiber.Ctx) (*TokenMetadata, error) {
 		}, nil
 	}
 
-	return nil, err
+	return nil, errors.New("claim data is not found or invalid")
 }
 
 // CheckToken returns tocken check result
 func CheckToken(c *fiber.Ctx) (bool, error) {
-	//get current time
 	now := time.Now().Unix()
-	//get the token claim data
 	claims, err := ExtractTokenMetata(c)
-	//if claim data is not found or invalid => return false
+
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in utils.CheckToken: %w", err)
 	}
-	//get expiration time from the claim data
+
 	expires := claims.Expires
-	//if token is expired return false
+
 	if now > expires {
-		return false, err
+		return false, fmt.Errorf("expired token: in utils.CheckToken: %w", err)
 	}
-	//return true, which means that token is valid
 	return true, nil
 }
 
@@ -73,7 +71,7 @@ func verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, jwtKeyFunc)
 	//if verification is failed, rreturn error
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing jwt in utils.verifyToken: %w", err)
 	}
 	//return valid token
 	return token, nil
@@ -88,9 +86,19 @@ func jwtKeyFunc(token *jwt.Token) (interface{}, error) {
 func GenerateNewAccessToken() (string, error) {
 	// get JWT secret from .env
 	secret := os.Getenv("JWT_SECRET_KEY")
-
+	if secret == "" {
+		return "", errors.New("jwt secret key is not set")
+	}
 	// get JWT token expire time from .env
-	minutesCount, _ := strconv.Atoi(os.Getenv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT"))
+	jwtExpirationTime := os.Getenv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT")
+	if jwtExpirationTime == "" {
+		return "", errors.New("jwt expiration time is not set")
+	}
+	minutesCount, err := strconv.Atoi(jwtExpirationTime)
+	if err != nil {
+		return "", fmt.Errorf("\"%v\" is ivalid token expiration time", jwtExpirationTime)
+	}
+
 	//create JWT claims object
 	claims := jwt.MapClaims{}
 	//add exp claim to claims
@@ -101,7 +109,7 @@ func GenerateNewAccessToken() (string, error) {
 	t, err := token.SignedString([]byte(secret))
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("signing token is utils.GenerateNewAccessToken: %w", err)
 	}
 
 	return t, nil

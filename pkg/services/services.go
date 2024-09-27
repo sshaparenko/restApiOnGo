@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -9,31 +10,34 @@ import (
 	"github.com/sshaparenko/restApiOnGo/pkg/domain"
 )
 
-func GetAllItems() []domain.Item {
-	//create a variable to store items data
-	var items []domain.Item = []domain.Item{}
-	//get all data from database order by created_at
-	database.DB.Order("created_at desc").Find(&items)
-	//return all items from database
-	return items
+// GetAllItems returns array of all items
+// of type [domain.Item] from database
+func GetAllItems() (items []domain.Item, err error) {
+	items = []domain.Item{}
+	result := database.DB.Order("created_at desc").Find(&items)
+	if result.Error != nil {
+		return []domain.Item{}, fmt.Errorf("in services.GetAllItems: %w", result.Error)
+	}
+	return items, nil
 }
 
+// GetItemByID returns [domain.Item] from database
+// by its ID
 func GetItemByID(id string) (domain.Item, error) {
-	// create a variable to store item data
 	var item domain.Item
-	// get item data from the database by ID
 	result := database.DB.First(&item, "id = ?", id)
-	// if the item data is not found, return an error
 	if result.RowsAffected == 0 {
 		return domain.Item{}, errors.New("item not found")
 	}
-	// return the item data from the database
+	if result.Error != nil {
+		return domain.Item{}, fmt.Errorf("in services.GetItemByID: %w", result.Error)
+	}
 	return item, nil
 }
 
-func CreateItem(itemRequest domain.ItemRequest) domain.Item {
-	// create a new item
-	// this item will be inserted to the database
+// CreateItem creates a new item in database
+// with data specified in [domain.ItemRequest]
+func CreateItem(itemRequest domain.ItemRequest) (domain.Item, error) {
 	var newItem domain.Item = domain.Item{
 		ID:        uuid.New().String(),
 		Name:      itemRequest.Name,
@@ -41,18 +45,20 @@ func CreateItem(itemRequest domain.ItemRequest) domain.Item {
 		Quantity:  itemRequest.Quantity,
 		CreatedAt: time.Now(),
 	}
-	// insert the new item data into the database
-	database.DB.Create(&newItem)
 
-	// return the recently inserted item
-	return newItem
+	result := database.DB.Create(&newItem)
+	if result.Error != nil {
+		return domain.Item{}, fmt.Errorf("in services.CreateItem: %w", result.Error)
+	}
+	return newItem, nil
 }
 
+// UpdateItem updates data about item in database
 func UpdateItem(itemRequest domain.ItemRequest, id string) (domain.Item, error) {
 	item, err := GetItemByID(id)
 
 	if err != nil {
-		return domain.Item{}, err
+		return domain.Item{}, fmt.Errorf("in services.UpdateItem: %w", err)
 	}
 
 	item.Name = itemRequest.Name
@@ -60,19 +66,27 @@ func UpdateItem(itemRequest domain.ItemRequest, id string) (domain.Item, error) 
 	item.Quantity = itemRequest.Quantity
 	item.UpdatedAt = time.Now()
 
-	database.DB.Save(&item)
+	result := database.DB.Save(&item)
+	if result.Error != nil {
+		return domain.Item{}, fmt.Errorf("in services.UpdateItem: %w", result.Error)
+	}
 
 	return item, nil
 }
 
-func DeleteItem(id string) bool {
+// DeleteItem removes item from database
+// based on its id
+func DeleteItem(id string) (bool, error) {
 	item, err := GetItemByID(id)
 
 	if err != nil {
-		return false
+		return false, fmt.Errorf("in services.DeleteItem: %w", err)
 	}
 
-	database.DB.Delete(&item)
+	result := database.DB.Delete(&item)
+	if result.Error != nil {
+		return false, fmt.Errorf("in services.DeleteItem: %w", err)
+	}
 
-	return true
+	return true, nil
 }
