@@ -45,6 +45,10 @@ func Login(userInput domain.UserRequest) (string, error) {
 	//find user based on email
 	result := database.DB.First(&user, "email = ?", userInput.Email)
 	//if user is not found => reurn error
+	if result.Error != nil {
+		return "", fmt.Errorf("find user by email in services.Login: %w", result.Error)
+	}
+
 	if result.RowsAffected == 0 {
 		return "", errors.New("user not found")
 	}
