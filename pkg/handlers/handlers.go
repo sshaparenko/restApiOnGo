@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sshaparenko/restApiOnGo/pkg/domain"
 	"github.com/sshaparenko/restApiOnGo/pkg/services"
 	"github.com/sshaparenko/restApiOnGo/pkg/utils"
+	"gorm.io/gorm"
 )
 
 func GetAllItems(c *fiber.Ctx) error {
@@ -153,10 +155,15 @@ func DeleteItem(c *fiber.Ctx) error {
 
 	result, err := services.DeleteItem(itemID)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(domain.Response[domain.Item]{
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(http.StatusNotFound).JSON(domain.Response[any]{
+				Success: false,
+				Message: "item not found",
+			})
+		}
+		return c.Status(http.StatusInternalServerError).JSON(domain.Response[any]{
 			Success: false,
 			Message: err.Error(),
-			Data:    domain.Item{},
 		})
 	}
 

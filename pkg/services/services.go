@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -26,9 +25,6 @@ func GetAllItems() (items []domain.Item, err error) {
 func GetItemByID(id string) (domain.Item, error) {
 	var item domain.Item
 	result := database.DB.First(&item, "id = ?", id)
-	if result.RowsAffected == 0 {
-		return domain.Item{}, errors.New("item not found")
-	}
 	if result.Error != nil {
 		return domain.Item{}, fmt.Errorf("in services.GetItemByID: %w", result.Error)
 	}

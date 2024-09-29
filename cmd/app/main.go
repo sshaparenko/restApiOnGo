@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,50 +10,60 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/sshaparenko/restApiOnGo/pkg/database"
 	"github.com/sshaparenko/restApiOnGo/pkg/routes"
+	"gorm.io/gorm"
 )
 
 const DEFAULT_PORT = "8080"
 
+var isPrinted = false
+
 func NewFiberApp() *fiber.App {
-	var app *fiber.App = fiber.New(fiber.Config{
-		DisableStartupMessage: true,
-	})
+	var app *fiber.App = fiber.New()
 	routes.SetupRoutes(app)
 	return app
 }
 
 func main() {
-	var app *fiber.App = NewFiberApp()
+	timeout := 10 * time.Second
 
-	err := database.InitDatasource(
-		os.Getenv("POSTGRES_DATABASE"),
-		os.Getenv("POSTGRES_PORT"),
-	)
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+	server := Server{
+		App: NewFiberApp(),
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	dbCtx, dbCtxCancel := context.WithTimeout(context.Background(), timeout)
+	defer dbCtxCancel()
 
-	if err := runServer(ctx, app); err != nil {
+	success := make(chan struct{}, 1)
+
+	server.ConnectDB(dbCtx, success)
+	handleConnection(dbCtx, success, &server)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	if err := server.Run(ctx); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func runServer(ctx context.Context, app *fiber.App) error {
-	port := os.Getenv("PORT")
-	timeout := 5 * time.Second
+// Server is a struct that wraps
+// fiber app and database for better
+// code extensibility
+type Server struct {
+	App *fiber.App
+	DB  *gorm.DB
+}
 
-	if port == "" {
-		port = DEFAULT_PORT
-	}
+// Run is a function that starts the server
+func (server *Server) Run(ctx context.Context) error {
+	port := getPort()
 
 	go func() {
-		if err := app.Listen(fmt.Sprintf(":%s", port)); err != nil {
-			log.Fatalf("main app.Listen: %s", err.Error())
+		if err := server.App.Listen(fmt.Sprintf(":%s", port)); err != nil {
+			log.Fatalf("main app.runServer: %s", err.Error())
 		}
 	}()
 
@@ -60,22 +71,34 @@ func runServer(ctx context.Context, app *fiber.App) error {
 
 	<-ctx.Done()
 
-	log.Println("graceful shutdown started")
-
-	if err := app.ShutdownWithTimeout(timeout); err != nil {
-		return fmt.Errorf("shut down with timeout in main.runServer: %w", err)
+	if err := server.Shutdown(); err != nil {
+		return err
 	}
 
-	if err := clearResources(); err != nil {
-		return fmt.Errorf("clearing resources in main.runServer: %w", err)
+	if err := server.ClearResources(); err != nil {
+		return fmt.Errorf("clearing resources in main.gracefulShutdown: %w", err)
 	}
 
-	log.Println("servers shut down was successful")
 	return nil
 }
 
-func clearResources() error {
-	sqlDB, err := database.DB.DB()
+// Sutdown is a function that finishes server gracefully
+func (server *Server) Shutdown() error {
+	timeout := 5 * time.Second
+
+	log.Println("graceful shutdown started")
+
+	if err := server.App.ShutdownWithTimeout(timeout); err != nil {
+		return fmt.Errorf("shut down with timeout in main.gracefulShutdown: %w", err)
+	}
+
+	log.Println("server shutdown was successful")
+	return nil
+}
+
+// ClearupResources closes the database connection
+func (server *Server) ClearResources() error {
+	sqlDB, err := server.DB.DB()
 	if err != nil {
 		return fmt.Errorf("obtain sql.DB in main.clearResources: %w", err)
 	}
@@ -86,4 +109,55 @@ func clearResources() error {
 
 	log.Println("resources were cleared successfully")
 	return nil
+}
+
+// ConnectDB handles database connection on startup
+// In case if database refuses connection to it, server will try
+// to reconnect while timeout is not exceeded
+func (server *Server) ConnectDB(ctx context.Context, success chan struct{}) {
+	err := database.InitDatasource(
+		os.Getenv("POSTGRES_DATABASE"),
+		os.Getenv("POSTGRES_PORT"),
+	)
+	if err != nil {
+		innerErr := errors.Unwrap(err)
+		switch innerErr.(type) {
+		case *pgconn.ConnectError:
+			if !isPrinted {
+				log.Println(innerErr)
+				log.Println("trying to reconnect")
+				isPrinted = true
+			}
+			server.ConnectDB(ctx, success)
+		default:
+			log.Fatalf("Failed to initialize database: %v", err)
+		}
+	} else {
+		server.DB = database.DB
+		success <- struct{}{}
+	}
+}
+
+// handleConnection tracks if the timeout for database
+// reconnect was exceeded
+func handleConnection(ctx context.Context, successConn chan struct{}, server *Server) {
+	select {
+	case <-ctx.Done():
+		log.Println("timeout was exceeded")
+		if err := server.Shutdown(); err != nil {
+			log.Fatalln(err.Error())
+		}
+		return
+	case <-successConn:
+		log.Println("connected to database")
+	}
+}
+
+func getPort() string {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		return DEFAULT_PORT
+	}
+	return port
 }
