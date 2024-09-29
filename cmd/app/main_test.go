@@ -31,10 +31,6 @@ func initTestDatasource() {
 	var db_name string = "pgtdb"
 	var db_port string = "5433"
 
-	fmt.Print("HOST " + db_host)
-	fmt.Print("PASS " + db_pass)
-	fmt.Print("USER " + db_user)
-
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", db_host, db_user, db_pass, db_name, db_port)
 
 	var err error
