@@ -33,8 +33,6 @@ func InitDatasource(dbName string, dbPort string) (err error) {
 		return err
 	}
 
-	log.Println("Connected to Database")
-
 	if err := DB.AutoMigrate(&domain.User{}, &domain.Item{}); err != nil {
 		return err
 	}
